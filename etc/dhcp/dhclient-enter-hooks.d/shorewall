@@ -1,0 +1,35 @@
+#!/bin/sh
+
+firewall_setup() {
+    # No need to continue if we're called with an unsupported option
+
+    case $reason in
+#    Took off RENEW because excessive eth1 down/up cycle interruption
+#    BOUND|RENEW|REBIND|REBOOT|EXPIRE|FAIL|RELEASE|STOP)
+    BOUND|REBIND|REBOOT|FAIL|RELEASE|STOP)
+        # DO NOT TOUCH FIREWALL outside of 'eth1'
+        if [ "$interface" != "eth1" ]; then
+            return
+        fi
+        # dhclient environment variables defined in dhclient-script(8) man page
+        logger "shorewall refresh at $interface due to DHCP $reason"
+        logger "... medium: $medium alias_ip: $alias_ip_address routers: $routers"
+        logger "... new_ip: $new_ip_address new_subnet_mask: $new_subnet_mask"
+        logger "... new_domain: $new_domain_name new_dns_servers: $new_domain_name_servers"
+        logger "... new_routers: $new_routers new_static_routes: $new_static_routes"
+    	;;
+    *)
+    	return
+    	;;
+    esac
+
+    umask 022
+
+    # reload the shorewall server
+    # [ -x /sbin/shorewall ] && /sbin/shorewall refresh
+    [ -x /sbin/shorewall ] && /sbin/shorewall restart
+
+}
+
+firewall_setup
+exit 0
